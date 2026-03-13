@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} · {{ .Site.Title }}{{ end }}</title>
+  <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ with .Site.Params.description }}{{ . }}{{ end }}{{ end }}" />
+  <link rel="alternate" type="application/rss+xml" title="{{ .Site.Title }} RSS" href="{{ "index.xml" | relURL }}" />
+  <link rel="stylesheet" href="{{ "css/main.css" | relURL }}" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <h1><a href="{{ "/" | relURL }}">{{ .Site.Title }}</a></h1>
+      <p>{{ .Site.Params.description }}</p>
+    </div>
+  </header>
+
+  <main class="container">
+    {{ block "main" . }}{{ end }}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>© {{ now.Year }} {{ .Site.Title }} · <a href="{{ "index.xml" | relURL }}">RSS 订阅</a></p>
+    </div>
+  </footer>
+</body>
+</html>

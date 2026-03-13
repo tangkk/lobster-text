@@ -1,0 +1,16 @@
+baseURL = 'https://tangkk.github.io/lobster-text/'
+languageCode = 'zh-cn'
+title = '龙虾头条文字版'
+defaultContentLanguage = 'zh'
+
+[params]
+  description = '把播客内容整理成可阅读、可订阅的文字文章。'
+
+[outputs]
+  home = ['HTML', 'RSS']
+  section = ['HTML', 'RSS']
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
