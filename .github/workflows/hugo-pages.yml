@@ -17,6 +17,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      latest_slug: ${{ steps.verify.outputs.latest_slug }}
     env:
       HUGO_VERSION: 0.157.0
     steps:
@@ -31,7 +33,18 @@ jobs:
           hugo-version: ${{ env.HUGO_VERSION }}
           extended: true
       - name: Build
-        run: hugo --minify --baseURL "${{ steps.pages.outputs.base_url }}/"
+        run: hugo --minify --buildFuture --baseURL "${{ steps.pages.outputs.base_url }}/"
+      - name: Verify latest post is in build output
+        id: verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          latest_post="$(find content/posts -maxdepth 1 -type f -name '*.md' | sort | tail -n 1)"
+          test -n "$latest_post"
+          latest_slug="$(basename "$latest_post" .md)"
+          test -f "public/posts/${latest_slug}/index.html"
+          grep -Fq "/posts/${latest_slug}/" public/index.html
+          echo "latest_slug=${latest_slug}" >> "$GITHUB_OUTPUT"
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -47,3 +60,24 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Verify latest post is live and listed
+        shell: bash
+        env:
+          SITE_URL: ${{ steps.deployment.outputs.page_url }}
+          LATEST_SLUG: ${{ needs.build.outputs.latest_slug }}
+        run: |
+          set -euo pipefail
+          base="${SITE_URL%/}"
+          article_url="${base}/posts/${LATEST_SLUG}/"
+          homepage_url="${base}/"
+          for attempt in 1 2 3 4 5 6; do
+            article="$(curl -fsSL --max-time 20 "$article_url" || true)"
+            homepage="$(curl -fsSL --max-time 20 "$homepage_url" || true)"
+            if [ -n "$article" ] && printf '%s' "$homepage" | grep -Fq "/posts/${LATEST_SLUG}/"; then
+              echo "Verified live article: $article_url"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Latest article is not live/listed after deployment: $article_url" >&2
+          exit 1
